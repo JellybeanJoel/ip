@@ -1,22 +1,22 @@
 public class Task {
     protected String description;
-    protected boolean done;
+    protected boolean isDone;
 
     public Task(String description) {
         this.description = description;
-        this.done = false;
+        this.isDone = false;
     }
 
     public String statusIcon() {
-        return done ? "X" : " ";
+        return isDone ? "X" : " ";
     }
 
     public void mark() {
-        this.done = true;
+        this.isDone = true;
     }
 
     public void unmark() {
-        this.done = false;
+        this.isDone = false;
     }
 
     public String toString() {
