@@ -38,6 +38,30 @@ public class Jenie {
                 tasks[index - 1].unmark();
                 System.out.println("OK, I've marked this task as not done yet:");
                 System.out.println(" " + tasks[index - 1]);
+            } else if (input.startsWith("todo ")){
+                tasks[taskCount] = new Todo(input.substring(5));
+                taskCount++;
+                printStatement(tasks[taskCount -1], taskCount);
+            } else if (input.startsWith("deadline ")) {
+                String content = input.substring(9);
+                if (!content.contains(" /by ")) {
+                    System.out.println("Oopsies! Please input: deadline [description] /by [date/time]");
+                } else {
+                    String[] parts = content.split(" /by ");
+                    tasks[taskCount] = new Deadline(parts[0], parts[1]);
+                    taskCount++;
+                    printStatement(tasks[taskCount - 1], taskCount);
+                }
+            } else if (input.startsWith("event ")) {
+                String content = input.substring(6);
+                if (!content.contains(" /from ") || !content.contains(" /to ")) {
+                    System.out.println("Oopsies! Please input: event [description] /from [date/time] /to [date/time]");
+                } else {
+                    String[] parts = content.split(" /from | /to ");
+                    tasks[taskCount] = new Event(parts[0], parts[1], parts[2]);
+                    taskCount++;
+                    printStatement(tasks[taskCount - 1], taskCount);
+                }
             } else {
                 tasks[taskCount] = new Task(input);
                 taskCount++;
@@ -45,5 +69,11 @@ public class Jenie {
             }
         }
         scanner.close();
+    }
+
+    private static void printStatement(Task task, int count) {
+        System.out.println("Got it. I've added this task:");
+        System.out.println("  " + task);
+        System.out.println("Now you have " + count + " tasks in the list.");
     }
 }
