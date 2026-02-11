@@ -1,3 +1,5 @@
+package jenie.task;
+
 public class Task {
     protected String description;
     protected boolean isDone;
@@ -7,21 +9,21 @@ public class Task {
         this.isDone = false;
     }
 
-    public String statusIcon() {
+    public String getStatusIcon() {
         return isDone ? "X" : " ";
     }
 
-    public void mark() {
+    public void markAsDone() {
         this.isDone = true;
     }
 
-    public void unmark() {
+    public void unmarkAsDone() {
         this.isDone = false;
     }
 
     @Override
     public String toString() {
-        return "[" + statusIcon() + "] " + description;
+        return "[" + getStatusIcon() + "] " + description;
     }
 
 }
