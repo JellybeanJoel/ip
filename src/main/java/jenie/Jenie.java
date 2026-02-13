@@ -151,6 +151,6 @@ public class Jenie {
     private static void printTaskAdded(Task task, int count) {
         System.out.println("Got it. I've added this task:");
         System.out.println(" " + task);
-        System.out.println("Now you have " + count + " tasks in the list.");
+        System.out.println("Now you have " + count + " tasks in the list!");
     }
 }
