@@ -1,6 +1,7 @@
 package jenie;
 
 import java.util.Scanner;
+import java.util.ArrayList;
 import jenie.exception.JenieException;
 import jenie.task.Deadline;
 import jenie.task.Event;
@@ -8,9 +9,7 @@ import jenie.task.Task;
 import jenie.task.Todo;
 
 public class Jenie {
-    private static final int MAX_TASKS = 100;
-    private static Task[] tasks = new Task[MAX_TASKS];
-    private static int taskCount = 0;
+    private static ArrayList<Task> tasks = new ArrayList<>();
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
@@ -45,6 +44,8 @@ public class Jenie {
             handleDeadline(input);
         } else if (input.startsWith("event")) {
             handleEvent(input);
+        } else if (input.startsWith("delete")) {
+            handleDelete(input);
         } else {
             throw new JenieException("Oopsies! My apologies, but I don't know what " + input + " means. womp womp :(");
         }
@@ -63,8 +64,8 @@ public class Jenie {
 
     private static void showList() {
         System.out.println("Here are the tasks in your list:");
-        for (int i = 0; i < taskCount; i++) {
-            System.out.println((i + 1) + ". " + tasks[i].toString());
+        for (int i = 0; i < tasks.size(); i++) {
+            System.out.println((i + 1) + ". " + tasks.get(i).toString());
         }
     }
 
@@ -73,13 +74,13 @@ public class Jenie {
             throw new JenieException("Oopsies! Please input mark [integer]");
         }
         try {
-            int index = Integer.parseInt(input.substring(5));
-            if (index <= 0 || index > taskCount) {
-                throw new JenieException("Task number " + index + " does not exist in your list.");
+            int index = Integer.parseInt(input.substring(5)) - 1;
+            if (index < 0 || index >= tasks.size()) {
+                throw new JenieException("Task number " + (index + 1) + " does not exist in your list.");
             }
-            tasks[index - 1].markAsDone();
+            tasks.get(index).markAsDone();
             System.out.println("Nice! I've marked this task as done:");
-            System.out.println(" " + tasks[index - 1]);
+            System.out.println(" " + tasks.get(index));
         } catch (NumberFormatException e) {
             throw new JenieException("Oopsies! Please input a valid integer.");
         }
@@ -90,13 +91,13 @@ public class Jenie {
             throw new JenieException("Oopsies! Please input unmark [integer]");
         }
         try {
-            int index = Integer.parseInt(input.substring(7));
-            if (index <= 0 || index > taskCount) {
-                throw new JenieException("Task number " + index + " does not exist in your list.");
+            int index = Integer.parseInt(input.substring(7)) - 1;
+            if (index < 0 || index >= tasks.size()) {
+                throw new JenieException("Task number " + (index + 1) + " does not exist in your list.");
             }
-            tasks[index - 1].unmarkAsDone();
+            tasks.get(index).unmarkAsDone();
             System.out.println("OK, I've marked this task as not done yet:");
-            System.out.println(" " + tasks[index - 1]);
+            System.out.println(" " + tasks.get(index));
         } catch (NumberFormatException e) {
             throw new JenieException("Oopsies! Please input a valid integer.");
         }
@@ -109,9 +110,8 @@ public class Jenie {
         if (input.length() <= 5) {
             throw new JenieException("Oopsies! The description of a todo cannot be empty!");
         }
-        tasks[taskCount] = new Todo(input.substring(5));
-        taskCount++;
-        printTaskAdded(tasks[taskCount - 1], taskCount);
+        tasks.add(new Todo(input.substring(5)));
+        printTaskAdded(tasks.get(tasks.size() - 1));
     }
 
     private static void handleDeadline(String input) throws JenieException {
@@ -126,9 +126,8 @@ public class Jenie {
             throw new JenieException("Oopsies! Please input deadline [description] /by [date/time]");
         }
         String[] parts = content.split(" /by ");
-        tasks[taskCount] = new Deadline(parts[0], parts[1]);
-        taskCount++;
-        printTaskAdded(tasks[taskCount - 1], taskCount);
+        tasks.add(new Deadline(parts[0], parts[1]));
+        printTaskAdded(tasks.get(tasks.size() - 1));
     }
 
     private static void handleEvent(String input) throws JenieException {
@@ -143,14 +142,31 @@ public class Jenie {
             throw new JenieException("Oopsies! Please input event [description] /from [date/time] /to [date/time]");
         }
         String[] parts = content.split(" /from | /to ");
-        tasks[taskCount] = new Event(parts[0], parts[1], parts[2]);
-        taskCount++;
-        printTaskAdded(tasks[taskCount - 1], taskCount);
+        tasks.add(new Event(parts[0], parts[1], parts[2]));
+        printTaskAdded(tasks.get(tasks.size() - 1));
     }
 
-    private static void printTaskAdded(Task task, int count) {
+    private static void handleDelete(String input) throws JenieException {
+        if (input.length() <= 7 || input.charAt(6) != ' ') {
+            throw new JenieException("Oopsies! Please input delete [integer]");
+        }
+        try {
+            int index = Integer.parseInt(input.substring(7)) - 1;
+            if (index < 0 || index >= tasks.size()) {
+                throw new JenieException("Task number " + (index + 1) + " does not exist in your list.");
+            }
+            Task removedTask = tasks.remove(index);
+            System.out.println("OK, I've removed this task:");
+            System.out.println(" " + removedTask);
+            System.out.println("Now you have " + tasks.size() + " tasks in the list.");
+        } catch (NumberFormatException e) {
+            throw new JenieException("Oopsies! Please input a valid integer.");
+        }
+    }
+
+    private static void printTaskAdded(Task task) {
         System.out.println("Got it. I've added this task:");
         System.out.println(" " + task);
-        System.out.println("Now you have " + count + " tasks in the list!");
+        System.out.println("Now you have " + tasks.size() + " tasks in the list.");
     }
 }
