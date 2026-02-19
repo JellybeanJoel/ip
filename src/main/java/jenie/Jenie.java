@@ -2,6 +2,11 @@ package jenie;
 
 import java.util.Scanner;
 import java.util.ArrayList;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import jenie.exception.JenieException;
 import jenie.task.Deadline;
 import jenie.task.Event;
@@ -10,8 +15,12 @@ import jenie.task.Todo;
 
 public class Jenie {
     private static ArrayList<Task> tasks = new ArrayList<>();
+    private static final String FILE_PATH = "./data/jenie.txt";
+    private static final String DIR_PATH = "./data/";
 
     public static void main(String[] args) {
+        loadData();
+
         Scanner scanner = new Scanner(System.in);
         printGreetings();
 
@@ -24,11 +33,80 @@ public class Jenie {
                     break;
                 }
                 processCommand(input);
+                saveData();
             } catch (JenieException e) {
                 System.out.println(e.getMessage());
             }
         }
         scanner.close();
+    }
+
+    private static void saveData() {
+        try {
+            File directory = new File(DIR_PATH);
+            if (!directory.exists()) {
+                directory.mkdirs(); // Create ./data/ folder if missing
+            }
+
+            FileWriter writer = new FileWriter(FILE_PATH);
+            for (Task task : tasks) {
+                writer.write(task.toFileFormat() + System.lineSeparator());
+            }
+            writer.close();
+        } catch (IOException e) {
+            System.out.println("Error saving data: " + e.getMessage());
+        }
+    }
+
+    private static void loadData() {
+        try {
+            File file = new File(FILE_PATH);
+            if (!file.exists()) {
+                return; // Silent return if file doesn't exist yet
+            }
+
+            Scanner fileScanner = new Scanner(file);
+            while (fileScanner.hasNextLine()) {
+                String line = fileScanner.nextLine();
+                Task task = parseLineToTask(line);
+                if (task != null) {
+                    tasks.add(task);
+                }
+            }
+            fileScanner.close();
+        } catch (IOException e) {
+            System.out.println("No existing data found. Starting fresh.");
+        }
+    }
+
+    private static Task parseLineToTask(String line) {
+        try {
+            String[] p = line.split(" \\| ");
+            String type = p[0];
+            boolean isDone = p[1].equals("1");
+            String desc = p[2];
+            Task task = null;
+
+            switch (type) {
+            case "T":
+                task = new Todo(desc);
+                break;
+            case "D":
+                task = new Deadline(desc, p[3]);
+                break;
+            case "E":
+                task = new Event(desc, p[3], p[4]);
+                break;
+            }
+
+            if (task != null && isDone) {
+                task.markAsDone();
+            }
+            return task;
+        } catch (Exception e) {
+            // Stretch Goal: Handle corrupted file content
+            return null;
+        }
     }
 
     private static void processCommand(String input) throws JenieException {
