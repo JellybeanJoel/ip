@@ -2,6 +2,9 @@ package jenie.task;
 
 import java.util.ArrayList;
 
+/**
+ * Manages the collection of tasks and provides search functionality.
+ */
 public class TaskList {
     private ArrayList<Task> tasks;
 
@@ -25,6 +28,12 @@ public class TaskList {
         return tasks.get(index);
     }
 
+    /**
+     * Finds tasks that contain the specified keyword in their description.
+     *
+     * @param keyword The string to search for.
+     * @return A TaskList containing only the matching tasks.
+     */
     public TaskList findTasks(String keyword) {
         ArrayList<Task> matchingTasks = new ArrayList<>();
         for (Task task : tasks) { // Use the plural 'tasks' field

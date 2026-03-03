@@ -4,11 +4,26 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import jenie.exception.JenieException;
 
+/**
+ * Parses user input strings into meaningful commands and data.
+ */
 public class Parser {
+    /**
+     * Extracts the command word from a raw input string.
+     *
+     * @param input The full line of user input.
+     * @return The first word of the input string.
+     */
     public static String getCommandWord(String input) {
         return input.split(" ")[0];
     }
-
+    /**
+     * Converts a date string into a LocalDate object.
+     *
+     * @param dateStr The date in yyyy-mm-dd format.
+     * @return The parsed LocalDate.
+     * @throws JenieException If the date format is invalid.
+     */
     public static LocalDate parseDate(String dateStr) throws JenieException {
         try {
             return LocalDate.parse(dateStr.trim());

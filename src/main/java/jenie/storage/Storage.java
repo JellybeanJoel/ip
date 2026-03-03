@@ -12,7 +12,16 @@ import jenie.task.Event;
 import jenie.task.Task;
 import jenie.task.TaskList;
 
+/**
+ * Handles the loading and saving of task data to the local file system.
+ */
 public class Storage {
+    /**
+     * Saves the current task list to the hard disk.
+     *
+     * @param taskList The list of tasks to be persisted.
+     * @throws IOException If there is an error writing to the file.
+     */
     private String filePath;
 
     public Storage(String filePath) {
