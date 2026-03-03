@@ -1,250 +1,92 @@
 package jenie;
 
 import java.util.Scanner;
-import java.util.ArrayList;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import jenie.exception.JenieException;
+import jenie.ui.Ui;
+import jenie.storage.Storage;
+import jenie.parser.Parser;
+import jenie.task.TaskList;
+import jenie.task.Todo;
 import jenie.task.Deadline;
 import jenie.task.Event;
 import jenie.task.Task;
-import jenie.task.Todo;
+import jenie.exception.JenieException;
 
 public class Jenie {
-    private static ArrayList<Task> tasks = new ArrayList<>();
-    private static final String FILE_PATH = "./data/jenie.txt";
-    private static final String DIR_PATH = "./data/";
+    private Storage storage;
+    private TaskList tasks;
+    private Ui ui;
 
-    public static void main(String[] args) {
-        loadData();
+    public Jenie(String filePath) {
+        ui = new Ui();
+        storage = new Storage(filePath);
+        try {
+            tasks = new TaskList(storage.load());
+        } catch (IOException e) {
+            ui.showError("Error loading file. Starting afresh.");
+            tasks = new TaskList();
+        }
+    }
 
+    public void run() {
+        ui.printGreetings();
         Scanner scanner = new Scanner(System.in);
-        printGreetings();
+        boolean isExit = false;
 
-        while (true) {
-            String input = scanner.nextLine();
+        while (!isExit) {
+            String fullCommand = scanner.nextLine();
+            String commandWord = Parser.getCommandWord(fullCommand);
 
             try {
-                if (input.equals("bye")) {
-                    System.out.println("Goodbye. Hope to see you again soon!");
+                switch (commandWord) {
+                case "bye":
+                    isExit = true;
+                    ui.printGoodbye();
                     break;
+                case "list":
+                    ui.printList(tasks);
+                    break;
+                case "todo":
+                    tasks.addTask(new Todo(fullCommand.substring(5)));
+                    ui.printTaskAdded(tasks.getTask(tasks.getSize() - 1), tasks.getSize());
+                    storage.save(tasks);
+                    break;
+                case "deadline":
+                    String[] parts = fullCommand.substring(9).split(" /by ");
+                    tasks.addTask(new Deadline(parts[0], Parser.parseDate(parts[1])));
+                    storage.save(tasks);
+                    ui.printTaskAdded(tasks.getTask(tasks.getSize() - 1), tasks.getSize());
+                case "event":
+                    String[] eParts = Parser.parseEventDetails(fullCommand);
+                    tasks.addTask(new Event(eParts[0], Parser.parseDate(eParts[1]), Parser.parseDate(eParts[2])));
+                    ui.printTaskAdded(tasks.getTask(tasks.getSize() - 1), tasks.getSize());
+                    storage.save(tasks);
+                    break;
+                case "delete":
+                    int index = Integer.parseInt(fullCommand.split(" ")[1]) - 1;
+                    Task removed = tasks.deleteTask(index);
+                    ui.printTaskDeleted(removed, tasks.getSize());
+                    storage.save(tasks);
+                    break;
+                case "find":
+                    if (fullCommand.length() <= 5) {
+                        throw new JenieException("Oopsies! Please specify a keyword to find.");
+                    }
+                    String keyword = fullCommand.substring(5).trim();
+                    TaskList results = tasks.findTasks(keyword);
+                    ui.printSearchResults(results);
+                    break;
+                default:
+                    throw new JenieException("Oopsies! My apologies, but I don't know what that means. womp womp :(");
                 }
-                processCommand(input);
-                saveData();
-            } catch (JenieException e) {
-                System.out.println(e.getMessage());
+            } catch(Exception e){
+                ui.showError(e.getMessage());
             }
         }
         scanner.close();
     }
 
-    private static void saveData() {
-        try {
-            File directory = new File(DIR_PATH);
-            if (!directory.exists()) {
-                directory.mkdirs(); // Create ./data/ folder if missing
-            }
-
-            FileWriter writer = new FileWriter(FILE_PATH);
-            for (Task task : tasks) {
-                writer.write(task.toFileFormat() + System.lineSeparator());
-            }
-            writer.close();
-        } catch (IOException e) {
-            System.out.println("Error saving data: " + e.getMessage());
-        }
-    }
-
-    private static void loadData() {
-        try {
-            File file = new File(FILE_PATH);
-            if (!file.exists()) {
-                return; // Silent return if file doesn't exist yet
-            }
-
-            Scanner fileScanner = new Scanner(file);
-            while (fileScanner.hasNextLine()) {
-                String line = fileScanner.nextLine();
-                Task task = parseLineToTask(line);
-                if (task != null) {
-                    tasks.add(task);
-                }
-            }
-            fileScanner.close();
-        } catch (IOException e) {
-            System.out.println("No existing data found. Starting fresh.");
-        }
-    }
-
-    private static Task parseLineToTask(String line) {
-        try {
-            String[] p = line.split(" \\| ");
-            String type = p[0];
-            boolean isDone = p[1].equals("1");
-            String desc = p[2];
-            Task task = null;
-
-            switch (type) {
-            case "T":
-                task = new Todo(desc);
-                break;
-            case "D":
-                task = new Deadline(desc, p[3]);
-                break;
-            case "E":
-                task = new Event(desc, p[3], p[4]);
-                break;
-            }
-
-            if (task != null && isDone) {
-                task.markAsDone();
-            }
-            return task;
-        } catch (Exception e) {
-            // Stretch Goal: Handle corrupted file content
-            return null;
-        }
-    }
-
-    private static void processCommand(String input) throws JenieException {
-        if (input.equals("list")) {
-            showList();
-        } else if(input.startsWith("mark")) {
-            handleMark(input);
-        } else if (input.startsWith("unmark")) {
-            handleUnmark(input);
-        } else if (input.startsWith("todo")) {
-            handleTodo(input);
-        } else if (input.startsWith("deadline")) {
-            handleDeadline(input);
-        } else if (input.startsWith("event")) {
-            handleEvent(input);
-        } else if (input.startsWith("delete")) {
-            handleDelete(input);
-        } else {
-            throw new JenieException("Oopsies! My apologies, but I don't know what " + input + " means. womp womp :(");
-        }
-    }
-
-    private static void printGreetings() {
-        String greetings = "  ______                  O      \n"
-                + " |__   _|  ___    _____   _    ___      \n"
-                + " _  | |   / __\\  |  _  | | |  / __\\    \n"
-                + "| |_| |  |  __/  | | | | | | |  __/     \n"
-                + "|_____/   \\___|  |_| |_| |_|  \\___|    \n";
-
-        System.out.println("Hello I'm\n" + greetings);
-        System.out.println("What can I do for you?");
-    }
-
-    private static void showList() {
-        System.out.println("Here are the tasks in your list:");
-        for (int i = 0; i < tasks.size(); i++) {
-            System.out.println((i + 1) + ". " + tasks.get(i).toString());
-        }
-    }
-
-    private static void handleMark(String input) throws JenieException {
-        if (input.length() <= 5 || input.charAt(4) != ' ') {
-            throw new JenieException("Oopsies! Please input mark [integer]");
-        }
-        try {
-            int index = Integer.parseInt(input.substring(5)) - 1;
-            if (index < 0 || index >= tasks.size()) {
-                throw new JenieException("Task number " + (index + 1) + " does not exist in your list.");
-            }
-            tasks.get(index).markAsDone();
-            System.out.println("Nice! I've marked this task as done:");
-            System.out.println(" " + tasks.get(index));
-        } catch (NumberFormatException e) {
-            throw new JenieException("Oopsies! Please input a valid integer.");
-        }
-    }
-
-    private static void handleUnmark(String input) throws JenieException {
-        if (input.length() <= 7 || input.charAt(6) != ' ') {
-            throw new JenieException("Oopsies! Please input unmark [integer]");
-        }
-        try {
-            int index = Integer.parseInt(input.substring(7)) - 1;
-            if (index < 0 || index >= tasks.size()) {
-                throw new JenieException("Task number " + (index + 1) + " does not exist in your list.");
-            }
-            tasks.get(index).unmarkAsDone();
-            System.out.println("OK, I've marked this task as not done yet:");
-            System.out.println(" " + tasks.get(index));
-        } catch (NumberFormatException e) {
-            throw new JenieException("Oopsies! Please input a valid integer.");
-        }
-    }
-
-    private static void handleTodo(String input) throws JenieException {
-        if (input.charAt(4) != ' ') {
-            throw new JenieException("Oopsies! Please input todo [description]");
-        }
-        if (input.length() <= 5) {
-            throw new JenieException("Oopsies! The description of a todo cannot be empty!");
-        }
-        tasks.add(new Todo(input.substring(5)));
-        printTaskAdded(tasks.get(tasks.size() - 1));
-    }
-
-    private static void handleDeadline(String input) throws JenieException {
-        if (input.charAt(8) != ' ') {
-            throw new JenieException("Oopsies! Please input deadline [description] /by [date/time]");
-        }
-        if (input.length() <= 9) {
-            throw new JenieException("Oopsies! The description of a deadline cannot be empty!");
-        }
-        String content = input.substring(9);
-        if (!content.contains(" /by ")) {
-            throw new JenieException("Oopsies! Please input deadline [description] /by [date/time]");
-        }
-        String[] parts = content.split(" /by ");
-        tasks.add(new Deadline(parts[0], parts[1]));
-        printTaskAdded(tasks.get(tasks.size() - 1));
-    }
-
-    private static void handleEvent(String input) throws JenieException {
-        if (input.charAt(5) != ' ') {
-            throw new JenieException("Oopsies! Please input event [description] /from [date/time] /to [date/time]");
-        }
-        if (input.length() <= 6) {
-            throw new JenieException("Oopsies! The description of an event cannot be empty!");
-        }
-        String content = input.substring(6);
-        if (!content.contains(" /from ") || !content.contains(" /to ")) {
-            throw new JenieException("Oopsies! Please input event [description] /from [date/time] /to [date/time]");
-        }
-        String[] parts = content.split(" /from | /to ");
-        tasks.add(new Event(parts[0], parts[1], parts[2]));
-        printTaskAdded(tasks.get(tasks.size() - 1));
-    }
-
-    private static void handleDelete(String input) throws JenieException {
-        if (input.length() <= 7 || input.charAt(6) != ' ') {
-            throw new JenieException("Oopsies! Please input delete [integer]");
-        }
-        try {
-            int index = Integer.parseInt(input.substring(7)) - 1;
-            if (index < 0 || index >= tasks.size()) {
-                throw new JenieException("Task number " + (index + 1) + " does not exist in your list.");
-            }
-            Task removedTask = tasks.remove(index);
-            System.out.println("OK, I've removed this task:");
-            System.out.println(" " + removedTask);
-            System.out.println("Now you have " + tasks.size() + " tasks in the list.");
-        } catch (NumberFormatException e) {
-            throw new JenieException("Oopsies! Please input a valid integer.");
-        }
-    }
-
-    private static void printTaskAdded(Task task) {
-        System.out.println("Got it. I've added this task:");
-        System.out.println(" " + task);
-        System.out.println("Now you have " + tasks.size() + " tasks in the list.");
+    public static void main(String[] args) {
+        new Jenie("./data/jenie.txt").run();
     }
 }
