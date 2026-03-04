@@ -46,6 +46,27 @@ public class Jenie {
                 case "list":
                     ui.printList(tasks);
                     break;
+                case "mark":
+                case "unmark":
+                    try {
+                        int index = Integer.parseInt(fullCommand.split(" ")[1]) - 1;
+
+                        if (index < 0 || index >= tasks.getSize()) {
+                            throw new JenieException("Oopsies! Task index " + (index + 1) + " is out of bounds.");
+                        }
+
+                        if (commandWord.equals("mark")) {
+                            Task t = tasks.markTaskAsDone(index);
+                            ui.printMarkedTask(t);
+                        } else {
+                            Task t = tasks.unmarkTaskAsDone(index);
+                            ui.printUnmarkedTask(t);
+                        }
+                        storage.save(tasks);
+                    } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+                        throw new JenieException("Oopsies! Please use: mark/unmark [number]");
+                    }
+                    break;
                 case "todo":
                     tasks.addTask(new Todo(fullCommand.substring(5)));
                     ui.printTaskAdded(tasks.getTask(tasks.getSize() - 1), tasks.getSize());
@@ -53,12 +74,13 @@ public class Jenie {
                     break;
                 case "deadline":
                     String[] parts = fullCommand.substring(9).split(" /by ");
-                    tasks.addTask(new Deadline(parts[0], Parser.parseDate(parts[1])));
+                    tasks.addTask(new Deadline(parts[0], Parser.parseDateTime(parts[1])));
                     storage.save(tasks);
                     ui.printTaskAdded(tasks.getTask(tasks.getSize() - 1), tasks.getSize());
+                    break;
                 case "event":
                     String[] eParts = Parser.parseEventDetails(fullCommand);
-                    tasks.addTask(new Event(eParts[0], Parser.parseDate(eParts[1]), Parser.parseDate(eParts[2])));
+                    tasks.addTask(new Event(eParts[0], Parser.parseDateTime(eParts[1]), Parser.parseDateTime(eParts[2])));
                     ui.printTaskAdded(tasks.getTask(tasks.getSize() - 1), tasks.getSize());
                     storage.save(tasks);
                     break;

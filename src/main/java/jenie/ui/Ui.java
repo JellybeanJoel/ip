@@ -48,6 +48,16 @@ public class Ui {
         }
     }
 
+    public void printMarkedTask(Task task) {
+        System.out.println("Nice! I've marked this task as done:");
+        System.out.println(" " + task);
+    }
+
+    public void printUnmarkedTask(Task task) {
+        System.out.println("OK, I've marked this task as not done yet:");
+        System.out.println(" " + task);
+    }
+
     public void showError(String message) {
         System.out.println(message);
     }

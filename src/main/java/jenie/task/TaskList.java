@@ -44,6 +44,30 @@ public class TaskList {
         return new TaskList(matchingTasks);
     }
 
+    /**
+     * Marks a task as done based on its index in the list.
+     *
+     * @param index The zero-based index of the task.
+     * @return The updated Task object.
+     */
+    public Task markTaskAsDone(int index) {
+        Task task = tasks.get(index);
+        task.markAsDone();
+        return task;
+    }
+
+    /**
+     * Marks a task as not done based on its index in the list.
+     *
+     * @param index The zero-based index of the task.
+     * @return The updated Task object.
+     */
+    public Task unmarkTaskAsDone(int index) {
+        Task task = tasks.get(index);
+        task.unmarkAsDone();
+        return task;
+    }
+
     public int getSize() {
         return tasks.size();
     }

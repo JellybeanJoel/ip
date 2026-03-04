@@ -1,23 +1,23 @@
 package jenie.task;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
  * Represents a task that occurs within a specific date range.
  */
 public class Event extends Task {
-    protected LocalDate from;
-    protected LocalDate to;
+    protected LocalDateTime from;
+    protected LocalDateTime to;
 
     /**
-     * Constructs an Event task with a description and start/end dates.
+     * Constructs an Event task with a description and start/end dateTimes.
      *
      * @param description The text describing the event.
-     * @param from The starting LocalDate of the event.
-     * @param to The ending LocalDate of the event.
+     * @param from The starting LocalDateTime of the event.
+     * @param to The ending LocalDateTime of the event.
      */
-    public Event(String description, LocalDate from, LocalDate to) {
+    public Event(String description, LocalDateTime from, LocalDateTime to) {
         super(description);
         this.from = from;
         this.to = to;
@@ -26,7 +26,7 @@ public class Event extends Task {
     /**
      * Returns the string representation for file saving, including date ranges.
      *
-     * @return A formatted string with the 'E' type identifier and start/end dates.
+     * @return A formatted string with the 'E' type identifier and start/end dateTimes.
      */
     @Override
     public String toFileFormat() {
@@ -35,7 +35,6 @@ public class Event extends Task {
 
     @Override
     public String toString() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd yyyy");
-        return "[E]" + super.toString() + " (from: " + from.format(formatter) + " to: " + to.format(formatter) + ")";
+        return "[E]" + super.toString() + " (from: " + from.format(DateTimeFormatter.ofPattern("MMM dd yyyy, hh:mm a")) + " to: " + to.format(DateTimeFormatter.ofPattern("MMM dd yyyy, hh:mm a")) + ")";
     }
 }

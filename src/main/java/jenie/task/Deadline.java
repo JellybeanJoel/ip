@@ -1,13 +1,13 @@
 package jenie.task;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
  * Represents a task that must be completed by a specific date.
  */
 public class Deadline extends Task {
-    protected LocalDate by;
+    protected LocalDateTime by;
 
     /**
      * Constructs a Deadline task with a description and a due date.
@@ -15,7 +15,7 @@ public class Deadline extends Task {
      * @param description The text describing the deadline.
      * @param by The LocalDate representing when the task is due.
      */
-    public Deadline(String description, LocalDate by) {
+    public Deadline(String description, LocalDateTime by) {
         super(description);
         this.by = by;
     }
@@ -32,6 +32,6 @@ public class Deadline extends Task {
 
     @Override
     public String toString() {
-        return "[D]" + super.toString() + " (by: " + by.format(DateTimeFormatter.ofPattern("MMM dd yyyy")) + ")";
+        return "[D]" + super.toString() + " (by: " + by.format(DateTimeFormatter.ofPattern("MMM dd yyyy, hh:mm a")) + ")";
     }
 }

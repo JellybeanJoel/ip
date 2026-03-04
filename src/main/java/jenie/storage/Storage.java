@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Scanner;
 import jenie.task.Todo;
@@ -39,23 +41,44 @@ public class Storage {
         while (s.hasNextLine()) {
             String line = s.nextLine();
             String[] p = line.split(" \\| ");
-            Task t = null;
+            Task task = null;
             switch (p[0]) {
             case "T":
-                t = new Todo(p[2]);
+                task = new Todo(p[2]);
                 break;
             case "D":
-                t = new Deadline(p[2], LocalDate.parse(p[3]));
+//                task = new Deadline(p[2], LocalDateTime.parse(p[3]));
+                LocalDateTime deadlineTime;
+                try {
+                    deadlineTime = LocalDateTime.parse(p[3]);
+                } catch (DateTimeParseException e) {
+                    // Fallback: If it's an old file with only a date, add a default time (00:00)
+                    deadlineTime = LocalDate.parse(p[3]).atStartOfDay();
+                }
+                task = new Deadline(p[2], deadlineTime);
                 break;
             case "E":
-                t = new Event(p[2], LocalDate.parse(p[3]), LocalDate.parse(p[4])); // Expand to LocalDate similarly if needed
+//                task = new Event(p[2], LocalDateTime.parse(p[3]), LocalDateTime.parse(p[4]));
+                LocalDateTime fromTime;
+                LocalDateTime toTime;
+                try {
+                    // Attempt to parse as new format (LocalDateTime)
+                    fromTime = LocalDateTime.parse(p[3]);
+                    toTime = LocalDateTime.parse(p[4]);
+                } catch (DateTimeParseException e) {
+                    // Fallback for old format (LocalDate only)
+                    // .atStartOfDay() converts 2026-03-03 to 2026-03-03T00:00
+                    fromTime = LocalDate.parse(p[3]).atStartOfDay();
+                    toTime = LocalDate.parse(p[4]).atStartOfDay();
+                }
+                task = new Event(p[2], fromTime, toTime);
                 break;
             }
-            if (t != null && p[1].equals("1")) {
-                t.markAsDone();
+            if (task != null && p[1].equals("1")) {
+                task.markAsDone();
             }
-            if (t != null) {
-                loadedTasks.add(t);
+            if (task != null) {
+                loadedTasks.add(task);
             }
         }
         s.close();
@@ -68,8 +91,8 @@ public class Storage {
             f.getParentFile().mkdirs();
         }
         FileWriter fw = new FileWriter(filePath);
-        for (Task t : taskList.getAllTasks()) {
-            fw.write(t.toFileFormat() + System.lineSeparator());
+        for (Task task : taskList.getAllTasks()) {
+            fw.write(task.toFileFormat() + System.lineSeparator());
         }
         fw.close();
     }
